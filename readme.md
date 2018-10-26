@@ -19,7 +19,7 @@
       support/dtrbackup:latest
     ```
 
-    ```
+```
 version: '3.7'
 services:
   dtr:
