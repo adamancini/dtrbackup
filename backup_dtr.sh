@@ -13,18 +13,25 @@ function error_exit {
 [[ ! -f /run/secrets/password ]] && error_exit "you must mount a docker secret with your admin password in /run/secrets/password; see 'docker secrets' usage."
 
 UCP_PASSWORD="$(cat /run/secrets/password)"
-
-DTR_VERSION=$(docker inspect $(docker ps -aq --filter=name=dtr-registry | head -n 1) | jq -r '.[].Config.Env[]' | grep DTR_VERSION | cut -d "=" -f 2 )
-DTR_REPLICA_ID=$(docker inspect $(docker ps -aq --filter=name=dtr-registry | head -n 1) | jq -r '.[].Config.Env[]' | grep DTR_REPLICA_ID | cut -d "=" -f 2)
+DTR_VERSION=$(docker inspect "$(docker ps -aq --filter=name=dtr-registry | head -n 1)" | jq -r '.[].Config.Env[]' | grep DTR_VERSION | cut -d "=" -f 2 )
+DTR_REPLICA_ID=$(docker inspect "$(docker ps -aq --filter=name=dtr-registry | head -n 1)" | jq -r '.[].Config.Env[]' | grep DTR_REPLICA_ID | cut -d "=" -f 2)
 
 echo "calling backup against ${UCP_URL} with replica ${DTR_REPLICA_ID} and dtr:${DTR_VERSION} image..."
 
-docker run --rm \
+docker run --rm -i \
   --env UCP_PASSWORD \
-  docker/dtr:${DTR_VERSION} backup \
+  docker/dtr:"${DTR_VERSION}" backup \
   --debug \
-  --ucp-url ${UCP_URL} \
+  --ucp-url "${UCP_URL}" \
   --ucp-insecure-tls \
-  --ucp-username ${UCP_USER} \
-  --ucp-password ${UCP_PASSWORD} \
-  --existing-replica-id ${DTR_REPLICA_ID} > "/backup/$(date --iso-8601)-$(hostname)-dtr-backup.tar"
+  --ucp-username "${UCP_USER}" \
+  --ucp-password "${UCP_PASSWORD}" \
+  --existing-replica-id "${DTR_REPLICA_ID}" > "/backup/$(date --iso-8601)-$(hostname)-dtr-backup.tar"
+
+echo "Rotate backups"
+find /backup/*-dtr-backup.tar -exec ls -lh {} +;
+
+echo "Found backup tarballs older than ${MAX_AGE} days"
+find /backup/*-dtr-backup.tar -mtime +"${MAX_AGE}" -exec ls -lh {} +;
+
+find /backup/*-dtr-backup.tar -mtime +"${MAX_AGE}" -delete
