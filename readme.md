@@ -15,8 +15,8 @@
       --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
       --mount source=dtrbackup,target=/tmp/backup \
       --restart-condition=none \
-      --constraint=node.hostname==ip-172-31-17-16.ec2.internal \
-      support/dtrbackup:latest
+      --restart-delay=24h \
+      support/dtrbackup:2.7
     ```
 
 ```
@@ -25,16 +25,16 @@ services:
   dtr:
     deploy:
       restart_policy:
-        condition: none
-      replicas: 1
+        condition: any
+        delay: 24h
       placement:
         constraints:
           - node.role == worker
-          - node.labels.dtr == true 
-    image: support/dtrbackup
+          - node.labels.com.docker.ucp.collection.system == true
+    image: adamancini/dtrbackup:2.7
     environment:
       UCP_USER: admin
-      UCP_URL: ucp.example.org
+      UCP_URL: ucp.test.mira.annarchy.net
     secrets:
       - source: backuppass
         target: password
@@ -48,15 +48,14 @@ services:
   ucp:
     deploy:
       restart_policy:
-        condition: none
-      replicas: 1
+        condition: any
+        delay: 24h
       placement:
         constraints:
           - node.role == manager
-    image: support/ucpbackup
+    image: adamancini/ucpbackup:3.2
     environment:
       UCP_USER: admin
-      UCP_URL: ucp.example.org
     secrets:
       - source: backuppass
         target: password
@@ -67,13 +66,10 @@ services:
       - source: /var/run/docker.sock
         target: /var/run/docker.sock
         type: bind
-
 volumes:
   ucpbackup:
   dtrbackup:
-  
 secrets:
   backuppass:
-    external: true 
+    external: true
 ```
-
