@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
 # set -x
-
-
 function error_exit {
   echo "$1" >&2   ## Send message to stderr. Exclude >&2 if you don't want it that way.
   exit "${2:-1}"  ## Return a code specified by $2 or 1 by default.
@@ -19,9 +17,8 @@ DTR_REPLICA_ID=$(docker inspect $(docker ps -aq --filter=name=dtr-registry | hea
 
 echo "calling backup against ${UCP_URL} with replica ${DTR_REPLICA_ID} and dtr:${DTR_VERSION} image..."
 
-docker run --rm \
-  --env UCP_PASSWORD \
-  docker/dtr:${DTR_VERSION} backup \
+docker run --rm -i \
+  "${DOCKERHUB_ORGANIZATION}"/dtr:${DTR_VERSION} backup \
   --debug \
   --ucp-url ${UCP_URL} \
   --ucp-insecure-tls \
